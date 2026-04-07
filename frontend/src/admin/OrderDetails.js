@@ -8,45 +8,39 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [files, setFiles] = useState([]);
 
+  // ✅ LOAD ORDER + FILES
   useEffect(() => {
-    fetchOrder();
-    fetchFiles();
-  }, []);
+    const loadData = async () => {
+      try {
+        const orderRes = await API.get(`/orders/${id}`);
+        setOrder(orderRes.data);
 
-  // 📦 GET ORDER
-  const fetchOrder = async () => {
-    try {
-      const res = await API.get(`/orders/${id}`);
-      setOrder(res.data);
-    } catch (err) {
-      console.log(err);
-      alert("Failed to load order");
-    }
-  };
+        const filesRes = await API.get(`/files/${id}`);
+        setFiles(filesRes.data);
+      } catch (err) {
+        console.log(err);
+        alert("Failed to load order details");
+      }
+    };
 
-  // 📂 GET FILES
-  const fetchFiles = async () => {
-    try {
-      const res = await API.get(`/files/${id}`);
-      setFiles(res.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    loadData();
+  }, [id]);
 
   // ✅ UPDATE STATUS
   const updateStatus = async (status) => {
     try {
       await API.put(`/orders/${id}`, { status });
       alert("Status updated");
-      fetchOrder();
+
+      const res = await API.get(`/orders/${id}`);
+      setOrder(res.data);
     } catch (err) {
       console.log(err);
       alert("Failed to update status");
     }
   };
 
-  // 💳 CONFIRM PAYMENT
+  // ✅ CONFIRM PAYMENT
   const confirmPayment = async () => {
     try {
       await API.put(`/orders/${id}`, {
@@ -55,14 +49,16 @@ const OrderDetails = () => {
       });
 
       alert("Payment confirmed");
-      fetchOrder();
+
+      const res = await API.get(`/orders/${id}`);
+      setOrder(res.data);
     } catch (err) {
       console.log(err);
       alert("Failed to confirm payment");
     }
   };
 
-  // 🔥 DELETE ORDER (FIXED)
+  // ✅ DELETE ORDER
   const deleteOrder = async () => {
     if (!window.confirm("Are you sure you want to delete this order?")) return;
 
@@ -116,7 +112,6 @@ const OrderDetails = () => {
       {/* FORM DATA */}
       <div style={card}>
         <h3>Submitted Details</h3>
-
         {order.formdata &&
           Object.entries(order.formdata).map(([key, value]) => (
             <p key={key}>
@@ -133,7 +128,7 @@ const OrderDetails = () => {
 
         <div style={fileGrid}>
           {files.map((f, i) => {
-            const fileUrl = `http://localhost:5000/${f.file_path}`;
+            const fileUrl = `${process.env.REACT_APP_API_URL}/${f.file_path}`;
             const isImage = f.file_path.match(/\.(jpg|jpeg|png|webp)$/i);
             const isPDF = f.file_path.match(/\.pdf$/i);
 
@@ -179,7 +174,6 @@ const OrderDetails = () => {
           Confirm Payment
         </button>
 
-        {/* 🔥 DELETE BUTTON */}
         <button style={{ ...btn, background: "red" }} onClick={deleteOrder}>
           Delete Order
         </button>
