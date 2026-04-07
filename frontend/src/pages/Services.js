@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ServiceCard from "../components/ServiceCard";
 import API from "../services/api";
 
-// IMAGES (KEEP THESE)
+// IMAGES
 import paybillImg from "../pages/paybill.png";
 import tillImg from "../pages/tillnamechange.png";
 import businessRegImg from "../pages/brs.png";
@@ -15,7 +15,7 @@ import ecitizenImg from "../pages/ecitizen.png";
 import mpesaImg from "../pages/mpesa statement.png";
 import netflixImg from "../pages/netflix.png";
 
-// 🔥 MAP IMAGES TO NAMES
+// 🔥 IMAGE MAP
 const images = {
   "Paybill Setup": paybillImg,
   "Till Name Change": tillImg,
@@ -41,7 +41,6 @@ const Services = () => {
     try {
       const res = await API.get("/services");
 
-      // 🔥 Attach images dynamically
       const data = res.data.map((s) => ({
         ...s,
         image: images[s.name],
@@ -55,25 +54,25 @@ const Services = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "15px" }}>
       {/* HERO */}
-      <div style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h1 style={{ fontSize: "28px", color: "#4f46e5" }}>
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <h1 style={{ fontSize: "22px", color: "#4f46e5" }}>
           Digital Services Made Easy
         </h1>
-        <p style={{ color: "#666" }}>
+
+        <p style={{ fontSize: "14px", color: "#666", marginTop: "8px" }}>
           We provide fast, secure, and reliable solutions to help you complete
           important processes quickly and without stress.
         </p>
       </div>
 
-      {/* SERVICES */}
+      {/* SERVICES GRID */}
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: "20px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gap: "15px",
         }}
       >
         {services.map((s) => (
