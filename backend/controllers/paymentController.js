@@ -8,7 +8,7 @@ const getAccessToken = async () => {
   ).toString("base64");
 
   const res = await axios.get(
-    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
     {
       headers: {
         Authorization: `Basic ${auth}`,
@@ -19,11 +19,16 @@ const getAccessToken = async () => {
   return res.data.access_token;
 };
 
-// 💳 STK PUSH (PAY NOW)
+// 💳 STK PUSH
 exports.payNow = async (req, res) => {
-  const { order_id, phone, amount } = req.body;
+  let { order_id, phone, amount } = req.body;
 
   try {
+    // ✅ FORMAT PHONE
+    if (phone.startsWith("0")) {
+      phone = "254" + phone.substring(1);
+    }
+
     const token = await getAccessToken();
 
     const timestamp = new Date()
@@ -36,7 +41,7 @@ exports.payNow = async (req, res) => {
     ).toString("base64");
 
     const stkRes = await axios.post(
-      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+      "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
       {
         BusinessShortCode: process.env.MPESA_SHORTCODE,
         Password: password,
@@ -47,7 +52,7 @@ exports.payNow = async (req, res) => {
         PartyB: process.env.MPESA_SHORTCODE,
         PhoneNumber: phone,
         CallBackURL: process.env.MPESA_CALLBACK_URL,
-        AccountReference: order_id.toString(), // IMPORTANT
+        AccountReference: order_id.toString(),
         TransactionDesc: "Chira Tech Payment",
       },
       {
@@ -67,18 +72,12 @@ exports.payNow = async (req, res) => {
   }
 };
 
-// 📩 M-PESA CALLBACK
+// 📩 CALLBACK
 exports.mpesaCallback = async (req, res) => {
   try {
-    const data = req.body;
+    const callback = req.body.Body.stkCallback;
 
-    console.log("MPESA CALLBACK:", JSON.stringify(data));
-
-    const callback = data.Body.stkCallback;
-
-    const resultCode = callback.ResultCode;
-
-    if (resultCode === 0) {
+    if (callback.ResultCode === 0) {
       const metadata = callback.CallbackMetadata.Item;
 
       const amount = metadata.find((i) => i.Name === "Amount")?.Value;
@@ -87,7 +86,9 @@ exports.mpesaCallback = async (req, res) => {
       )?.Value;
       const phone = metadata.find((i) => i.Name === "PhoneNumber")?.Value;
 
-      const order_id = callback.MerchantRequestID; // temporary mapping
+      const order_id = metadata.find(
+        (i) => i.Name === "AccountReference",
+      )?.Value;
 
       // SAVE PAYMENT
       await pool.query(
